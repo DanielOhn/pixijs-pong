@@ -76,8 +76,7 @@ let player, enemy, ball, wall;
 let walls = [];
 let floors = [];
 let up = keyboard('w');
-let down = keyboard('d');
-
+let down = keyboard('s');
 
 function makeWall() {
   let wall_texture = loader.resources.wall.texture;
@@ -93,7 +92,6 @@ function setup() {
   let bar_texture = loader.resources.bar.texture;
   let ball_texture = loader.resources.ball.texture;
 
-
   // Setting up Sprites
   player = new PIXI.Sprite(bar_texture);
   stage.addChild(player);
@@ -101,13 +99,12 @@ function setup() {
   enemy = new PIXI.Sprite(bar_texture);
   stage.addChild(enemy);
 
+  enemy.interactive = true;
+  enemy.hitArea = new PIXI.Rectangle(enemy.x, enemy.y, enemy.width, player.height);
+  
+
   ball = new PIXI.Sprite(ball_texture);
   stage.addChild(ball);
-
-  // wall = new PIXI.Sprite(wall_texture);
-  // stage.addChild(wall);
-
-  // wall.y = -200;
 
   for (let i = 0; i < 75; i++) {
     walls.push(makeWall());
@@ -115,6 +112,10 @@ function setup() {
 
     walls[i].y = -200;
     walls[i].x =  i * 8;
+
+    walls[i].anchor.set(.5);
+
+    walls[i].hitArea = new PIXI.Rectangle(walls[i].x, walls[i].y, 8, 8);
 
     floors.push(makeWall());
     stage.addChild(floors[i]);
@@ -131,6 +132,7 @@ function setup() {
   stage.pivot.y = stage.height;
 
   player.x = 0;
+  ball.x = 300;
   enemy.x = 600;
 
   player.vy = 0
@@ -139,8 +141,8 @@ function setup() {
   enemy.anchor.set(.5);
 
   // Controls
-
   up.press = () => {
+    console.log(player.y);
     player.vy = 1
   };
 
@@ -162,9 +164,68 @@ function setup() {
 function game(delta) {
   let speed = 3 * delta;
   ball.x += 1 * delta;
+
+  for (let wall of walls) {
+    if (check_collid(player, wall)) {
+      if (player.vy > 0) {
+        player.vy = 0;
+      }
+    }
+  }
+
+  for (let floor of floors) {
+    if (check_collid(player, floor)) {
+      if (player.vy < 0) {
+        player.vy = 0;
+      }
+    }
+  }
   
   player.y -= player.vy * speed;
-  
+}
+
+function check_collid(r1, r2) {
+  // Define variables we'll use to calculate
+  let hit, combinedHalfWidths, combinedHalfHeights, vx, vy;
+
+  // hit will determine whether there's a collision
+  hit = false;
+
+  // Find the center points of each sprite
+  r1.centerX = r1.x;
+  r1.centerY = r1.y;
+
+  r2.centerX = r2.x;
+  r2.centerY = r2.y;
+
+  // Find the half-widths and half-heights of each sprite
+  r1.halfWidth = r1.width / 2;
+  r1.halfHeight = r1.height / 2;
+  r2.halfWidth = r2.width / 2;
+  r2.halfHeight = r2.height / 2;
+
+  // Calculate the distance vectors between sprites
+  vx = r1.centerX - r2.centerX;
+  vy = r1.centerY - r2.centerY;
+
+  // Figure out the combined half-widths and half-heights
+  combinedHalfWidths = r1.halfWidth + r2.halfWidth;
+  combinedHalfHeights = r1.halfHeight + r2.halfHeight;
+
+  // Check collision on x axis
+  if (Math.abs(vx) < combinedHalfWidths) {
+    // A collisoin might be occuring.  Check for it on y axis
+    if (Math.abs(vy) < combinedHalfHeights) {
+      // There's definitely a collision happening
+      hit = true;
+    } else {
+      hit = false;
+    }
+  } else {
+    hit = false;
+  }
+
+  return hit;
 }
 
 // keyboard stuff
