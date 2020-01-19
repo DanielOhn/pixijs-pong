@@ -136,13 +136,17 @@ function setup() {
   enemy.x = 600;
 
   player.vy = 0
+  enemy.vy = 0;
+
+  ball.vx = -1;
+  ball.vy = 1;
 
   player.anchor.set(.5);
   enemy.anchor.set(.5);
+  ball.anchor.set(.5);
 
   // Controls
   up.press = () => {
-    console.log(player.y);
     player.vy = 1
   };
 
@@ -162,14 +166,26 @@ function setup() {
 }
 
 function game(delta) {
-  let speed = 3 * delta;
-  ball.x += 1 * delta;
+  let speed = 2.5 * delta;
+  let ball_speed = 3 * delta;
+
+  follow(enemy, ball);
 
   for (let wall of walls) {
     if (check_collid(player, wall)) {
       if (player.vy > 0) {
         player.vy = 0;
       }
+    }
+
+    if (check_collid(enemy, wall)) {
+      if (enemy.vy > 0) {
+        enemy.vy = 0;
+      }
+    }
+
+    if (check_collid(ball, wall)) {
+      ball.vy = -1;
     }
   }
 
@@ -179,9 +195,41 @@ function game(delta) {
         player.vy = 0;
       }
     }
+
+    if (check_collid(enemy, floor)) {
+      if (enemy.vy < 0) {
+        enemy.vy = 0;
+      }
+    }
+
+    if (check_collid(ball, floor)) {
+      ball.vy = 1;
+    }
   }
-  
+
+  // Collision for ball
+  if (check_collid(ball, enemy)) {
+    ball.vx = -1;
+  }
+
+  if (check_collid(ball, player)) {
+    ball.vx = 1;
+  }
+
+  ball.x += ball.vx * ball_speed;
+  ball.y -= ball.vy * ball_speed;
   player.y -= player.vy * speed;
+  enemy.y -= enemy.vy * speed;
+}
+
+function follow(obj_one, obj_two) {
+  if (obj_one.y > obj_two.y) {
+    obj_one.vy = 1;
+  } else if (obj_one.y < obj_two.y) {
+    obj_one.vy = -1;
+  } else {
+    obj_one.vy = 0;
+  }
 }
 
 function check_collid(r1, r2) {
