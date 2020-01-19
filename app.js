@@ -72,7 +72,7 @@ function animate() {
   img.rotation += 0.1;
 }
 
-let player, enemy, ball, wall;
+let player, enemy, ball, wall, playerScore, enemyScore;
 let walls = [];
 let floors = [];
 let up = keyboard('w');
@@ -102,10 +102,10 @@ function setup() {
   enemy.interactive = true;
   enemy.hitArea = new PIXI.Rectangle(enemy.x, enemy.y, enemy.width, player.height);
   
-
   ball = new PIXI.Sprite(ball_texture);
   stage.addChild(ball);
 
+  // Setting up the walls
   for (let i = 0; i < 75; i++) {
     walls.push(makeWall());
     stage.addChild(walls[i]);
@@ -135,12 +135,36 @@ function setup() {
   ball.x = 300;
   enemy.x = 600;
 
+  // Setting the speed for player, enemy, ball
   player.vy = 0
   enemy.vy = 0;
 
   ball.vx = -1;
   ball.vy = 1;
 
+  // Score
+  enemy.score = 0;
+  player.score = 0;
+
+  const style = new PIXI.TextStyle({
+    fontFamily: 'Roboto',
+    fill: ['#ffffff'],
+    fontSize: 32,
+  })
+
+  playerScore = new PIXI.Text(player.score, style);
+  enemyScore = new PIXI.Text(enemy.score, style);
+
+  stage.addChild(playerScore);
+  stage.addChild(enemyScore);
+
+  playerScore.y = -250;
+  playerScore.x = 0;
+
+  enemyScore.y = -250;
+  enemyScore.x = 575;
+
+  // Setting anchor to center of each object
   player.anchor.set(.5);
   enemy.anchor.set(.5);
   ball.anchor.set(.5);
@@ -169,8 +193,10 @@ function game(delta) {
   let speed = 2.5 * delta;
   let ball_speed = 3 * delta;
 
+  // Makes enemy bar follow the ball
   follow(enemy, ball);
 
+  // Collision for walls
   for (let wall of walls) {
     if (check_collid(player, wall)) {
       if (player.vy > 0) {
@@ -216,10 +242,22 @@ function game(delta) {
     ball.vx = 1;
   }
 
+  // Making objects move
   ball.x += ball.vx * ball_speed;
   ball.y -= ball.vy * ball_speed;
   player.y -= player.vy * speed;
   enemy.y -= enemy.vy * speed;
+
+  // Check if ball is out of bounds and resets it
+  if (ball.x < -75) {
+    enemy.score += 1;
+    enemyScore.text = enemy.score;
+    reset_ball()
+  } else if (ball.x > 675) {
+    player.score += 1;
+    playerScore.text = player.score;
+    reset_ball();
+  }
 }
 
 function follow(obj_one, obj_two) {
@@ -230,6 +268,11 @@ function follow(obj_one, obj_two) {
   } else {
     obj_one.vy = 0;
   }
+}
+
+function reset_ball() {
+  ball.x = 300;
+  ball.y = 0;
 }
 
 function check_collid(r1, r2) {
